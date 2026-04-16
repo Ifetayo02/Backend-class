@@ -97,4 +97,21 @@ const postSignin = (req, res) => {
         });
 }
 
-module.exports = { postSignup, getSignup, postSignin, getSignin, getDashboard };
+const getAllUsers = (req, res) => {
+    Customer.find()
+        .then((allUsers) => {
+            console.log("All users:", allUsers);
+            res.status(200).json(
+                {
+                    message: "Registered Users",
+                    users: allUsers
+                }
+            );
+        })
+        .catch((err) => {
+            console.error("Error fetching users:", err);
+            res.status(500).send("Internal server error");
+        });
+};
+
+module.exports = { postSignup, getSignup, postSignin, getSignin, getDashboard, getAllUsers };
