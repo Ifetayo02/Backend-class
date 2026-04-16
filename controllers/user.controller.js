@@ -40,23 +40,14 @@ const postSignin = (req, res) => {
                 console.log("Invalid Password");
                 return res.status(400).json({ message: "Invalid email or password"});
             }
-
-
-            
-            res.redirect("/user/dashboard");
-
-            // Success
-            return res.json({
+ return res.status(200).json({
                 message: "Login Successful",
                 user: {
-                    id: foundCustomers._id,
-                    email: foundCustomers.email,
-                    firstName: foundCustomers.firstName,
-                    lastName: foundCustomers.lastName
+                    id: foundCustomer._id,
+                    email: foundCustomer.email,
+                    firstName: foundCustomer.firstName
                 }
-            })
-
-
+            });
             
         })
         .catch((err) => {
