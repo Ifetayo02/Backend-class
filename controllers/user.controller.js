@@ -16,30 +16,54 @@ const getDashboard = (req, res) => {
     res.render("dashboard");
 }
 
-const postSignup = (req, res) => {
-    let salt = bcrypt.genSaltSync(10);
-    let hashedPassword = bcrypt.hashSync(req.body.password, salt);
-    
-    req.body.password = hashedPassword;
-    const user = req.body;
-    const newCustomer = new Customer(user);
 
-    newCustomer.save()
-        .then((savedUser) => {
-            // ... (Your existing Nodemailer code remains exactly the same) ...
 
-            // ✅ FIX: Replace res.redirect("/user/signin") with JSON
-            return res.status(201).json({ 
-                message: "Signup successful", 
-                redirectUrl: "/login" 
-            });
+const postSignin = (req, res) => {
+    const { email, password } = req.body;
+
+    Customer.findOne({ email })
+        .then((foundCustomers) => {
+            if (!foundCustomers) {
+                console.log("Invalid email");
+                return res.status(400).json({message: "Invalid email or password"})
+            } 
+            // if (foundCustomers.password !== password) {
+            //     console.log("Invalid Password");
+            //     return res.status(400).json({ message: "Invalid email or password"});
+            // }
+
+
+            // Compare provided password with hashed one
+            const isMatch = bcrypt.compareSync(password, foundCustomers.password);
+
+            if(!isMatch) {
+                console.log("Invalid Password");
+                return res.status(400).json({ message: "Invalid email or password"});
+            }
+
+
+            
+            res.redirect("/user/dashboard");
+
+            // Success
+            return res.json({
+                message: "Login Successful",
+                user: {
+                    id: foundCustomers._id,
+                    email: foundCustomers.email,
+                    firstName: foundCustomers.firstName,
+                    lastName: foundCustomers.lastName
+                }
+            })
+
+
+            
         })
         .catch((err) => {
-            console.error("Error saving to DB:", err);
-            res.status(500).json({ message: "Database error", error: err.message });
+            console.error("Error during signin:", err);
+            res.status(500).send("Internal server error");
         });
 }
-
 
 
 
