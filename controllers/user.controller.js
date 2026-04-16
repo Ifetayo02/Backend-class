@@ -1,12 +1,35 @@
-const Customer = require('../models/user.model');
-const bcrypt = require('bcryptjs');
-const postSignUp = (req, res) => {
+const Customer = require("../models/user.model");
+const ejs = require('ejs')
+const bcrypt = require('bcryptjs')
+const nodemailer = require('nodemailer');
+
+
+const getSignup = (req, res) => {
+    res.render("signup");
+}
+
+const getSignin = (req, res) => {   
+    res.render("signin");
+}
+
+const getDashboard = (req, res) => {
+    res.render("dashboard");
+}
+
+const postSignup = (req, res) => {
+    let salt = bcrypt.genSaltSync(10);
+    let hashedPassword = bcrypt.hashSync(req.body.password, salt);
+    
+    // Overwrite the plain password with the hashed one
+    req.body.password = hashedPassword;
+
     const user = req.body;
     
     const newCustomer = new Customer(user);
 
     newCustomer.save()
         .then((user) => {
+            newCustomer.password = hashedPassword;
             console.log("Customer saved:", user);
 
             // Transporter means the informarion about the service you are using to send the email
@@ -24,7 +47,7 @@ const postSignUp = (req, res) => {
             // This is the information about the email you are sending
             let mailOptions = {
                 from: 'abdulqoyumjamiu@gmail.com',
-                to: [user.email, "jamiuabdulqoyum220@gmail.com"],
+                to: [user.email],
                 subject: 'Welcome to our Application',
                 html: 
                 `
@@ -62,16 +85,6 @@ const postSignUp = (req, res) => {
         });
 }
 
-const getSignUp=(req, res) => {
-    res.render('signUp');
-};
-const getSignin = (req, res) => {   
-    res.render("signIn");
-}
-
-const getDashboard = (req, res) => {
-    res.render("dashboard");
-}
 const postSignin = (req, res) => {
     const { email, password } = req.body;
 
@@ -81,28 +94,34 @@ const postSignin = (req, res) => {
                 console.log("Invalid email");
                 return res.status(400).json({message: "Invalid email or password"})
             } 
-
-            if(password === foundCustomers.password) {
-                // Success
-                console.log("Login Successful for", foundCustomers.email);
-                 res.redirect("/user/dashboard");
-            } else {
-                console.log("Invalid password");
-                return res.status(400).json({message: "Invalid email or password"})
-            }
-            // const isMatch= bcrypt.compareSync(password, foundCustomers.password);
-            // if(!isMatch){
-            //     console.log("Invalid Password");
-            //     return res.status(400).json({ message: "Invalid email or password"});
-            // }
             // if (foundCustomers.password !== password) {
             //     console.log("Invalid Password");
             //     return res.status(400).json({ message: "Invalid email or password"});
             // }
 
 
+            // Compare provided password with hashed one
+            const isMatch = bcrypt.compareSync(password, foundCustomers.password);
+
+            if(!isMatch) {
+                console.log("Invalid Password");
+                return res.status(400).json({ message: "Invalid email or password"});
+            }
 
 
+            
+            res.redirect("/user/dashboard");
+
+            // Success
+            return res.json({
+                message: "Login Successful",
+                user: {
+                    id: foundCustomers._id,
+                    email: foundCustomers.email,
+                    firstName: foundCustomers.firstName,
+                    lastName: foundCustomers.lastName
+                }
+            })
 
 
             
@@ -112,4 +131,7 @@ const postSignin = (req, res) => {
             res.status(500).send("Internal server error");
         });
 }
-module.exports={postSignUp,getSignUp,postSignin,getSignin,getDashboard}
+
+
+
+module.exports = { postSignup, getSignup, postSignin, getSignin, getDashboard }

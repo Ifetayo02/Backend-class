@@ -12,7 +12,7 @@ const ejs = require('ejs');
 
 
 // 1. Port Fallback
-const port = process.env.PORT || 5000; 
+const port = process.env.PORT; 
 const MONGO_URI = process.env.MONGODB_URI;
 
 // Middleware
