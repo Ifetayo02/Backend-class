@@ -5,11 +5,11 @@ const nodemailer = require('nodemailer');
 
 
 const getSignup = (req, res) => {
-    res.render("signup");
+    res.render("signUp");
 }
 
 const getSignin = (req, res) => {   
-    res.render("signin");
+    res.render("signIn");
 }
 
 const getDashboard = (req, res) => {
