@@ -16,8 +16,12 @@ const port = process.env.PORT;
 const MONGO_URI = process.env.MONGODB_URI;
 
 // Middleware
-app.use(cors());
-
+app.use(cors({
+  origin: ['http://localhost:5174'], 
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true,
+optionsSuccessStatus: 204 
+}));
 
 // 2. MongoDB Connection with logic check
 if (!MONGO_URI) {
