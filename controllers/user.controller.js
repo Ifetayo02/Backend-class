@@ -1,87 +1,64 @@
 const Customer = require("../models/user.model");
-const ejs = require('ejs')
-const bcrypt = require('bcryptjs')
+const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
 
-
-const getSignup = (req, res) => {
-    res.render("signUp");
-}
-
-const getSignin = (req, res) => {   
-    res.render("signIn");
-}
-
-const getDashboard = (req, res) => {
-    res.render("dashboard");
-}
+// These are for EJS (SSR). If you are using React, you might not need these, 
+// but I'll leave them here in case you use them for other things.
+const getSignup = (req, res) => { res.render("signUp"); }
+const getSignin = (req, res) => { res.render("signIn"); }
+const getDashboard = (req, res) => { res.render("dashboard"); }
 
 const postSignup = (req, res) => {
     let salt = bcrypt.genSaltSync(10);
     let hashedPassword = bcrypt.hashSync(req.body.password, salt);
     
-    // Overwrite the plain password with the hashed one
     req.body.password = hashedPassword;
-
     const user = req.body;
-    
     const newCustomer = new Customer(user);
 
     newCustomer.save()
-        .then((user) => {
-            newCustomer.password = hashedPassword;
-            console.log("Customer saved:", user);
+        .then((savedUser) => {
+            console.log("Customer saved:", savedUser);
 
-            // Transporter means the informarion about the service you are using to send the email
             let transporter = nodemailer.createTransport({
                 service: 'gmail',
                 auth: {
                     user: 'abdulqoyumjamiu@gmail.com',
-                    // a special password generated from google settings not your original password
-                    // Step one: Enable 2-step verification
-                    // Step two: Generate app password
-                    pass: 'eqzx xniv gqjw grvt'
+                    pass: 'eqzx xniv gqjw grvt' 
                 }
             });
 
-            // This is the information about the email you are sending
             let mailOptions = {
                 from: 'abdulqoyumjamiu@gmail.com',
-                to: [user.email],
+                to: [savedUser.email],
                 subject: 'Welcome to our Application',
-                html: 
-                `
-                        <div style="background-color: #f4f4f4; padding: 0 0 10px; border-radius: 30px 30px 0 0  ;">
-                            <div style="padding-top: 20px; height: 100px; border-radius: 30px 30px 0 0 ; background: linear-gradient(-45deg, #f89b29 0%, #ff0f7b 100% );">
-                                <h1 style="color:white; text-align: center;">Welcome to our Application</h1>
-                            </div>
-                            <div style="padding: 30px 0; text-align: center;">
-                                <p style="font-size: 18px;"><span style="font-weight: 600;">Congratulations!</span> Your sign-up was successful!</p>
-                                <p>Thank you for registering. We are excited to have you on board.</p>
-                                <div style="padding: 20px 0;">
-                                    <hr style="width: 50%;">
-                                    <p style="margin-bottom: 10px;">Best Regards</p>
-                                    <p style="color: #f89b29; margin-top: 0;">Dan Star</p>
-                                </div>
-                            </div>
+                html: `
+                    <div style="background-color: #f4f4f4; padding: 0 0 10px; border-radius: 30px 30px 0 0;">
+                        <div style="padding-top: 20px; height: 100px; border-radius: 30px 30px 0 0 ; background: linear-gradient(-45deg, #f89b29 0%, #ff0f7b 100% );">
+                            <h1 style="color:white; text-align: center;">Welcome to our Application</h1>
                         </div>
+                        <div style="padding: 30px 0; text-align: center;">
+                            <p style="font-size: 18px;"><span style="font-weight: 600;">Congratulations!</span> Your sign-up was successful!</p>
+                            <p>Thank you for registering. We are excited to have you on board.</p>
+                        </div>
+                    </div>
                 `
-                
             };
-            // This is what will actually send the email
-            transporter.sendMail(mailOptions, function(error, info){
-            if (error) {
-                console.log(error);
-            } else {
-                console.log('Email sent: ' + info.response);
-            }
+
+            transporter.sendMail(mailOptions, (error, info) => {
+                if (error) console.log("Email Error:", error);
+                else console.log('Email sent: ' + info.response);
             });
 
-            res.redirect("/user/signin");
+            // ✅ FIX: Changed from res.redirect to res.json
+            return res.status(201).json({ 
+                status: true, 
+                message: "Signup successful. Please login." 
+            });
         })
         .catch((err) => {
             console.error("Error saving to DB:", err);
-            res.status(500).send("Error: " + err.message);
+            return res.status(500).json({ status: false, message: "Error: " + err.message });
         });
 }
 
@@ -89,49 +66,35 @@ const postSignin = (req, res) => {
     const { email, password } = req.body;
 
     Customer.findOne({ email })
-        .then((foundCustomers) => {
-            if (!foundCustomers) {
+        .then((foundCustomer) => {
+            if (!foundCustomer) {
                 console.log("Invalid email");
-                return res.status(400).json({message: "Invalid email or password"})
+                return res.status(400).json({ status: false, message: "Invalid email or password" });
             } 
-            // if (foundCustomers.password !== password) {
-            //     console.log("Invalid Password");
-            //     return res.status(400).json({ message: "Invalid email or password"});
-            // }
 
+            const isMatch = bcrypt.compareSync(password, foundCustomer.password);
 
-            // Compare provided password with hashed one
-            const isMatch = bcrypt.compareSync(password, foundCustomers.password);
-
-            if(!isMatch) {
+            if (!isMatch) {
                 console.log("Invalid Password");
-                return res.status(400).json({ message: "Invalid email or password"});
+                return res.status(400).json({ status: false, message: "Invalid email or password" });
             }
 
-
-            
-           
-
-            // Success
+            // ✅ FIX: Removed res.redirect and kept ONLY res.json
             return res.status(200).json({
+                status: true,
                 message: "Login Successful",
                 user: {
-                    id: foundCustomers._id,
-                    email: foundCustomers.email,
-                    firstName: foundCustomers.firstName,
-                    lastName: foundCustomers.lastName
+                    id: foundCustomer._id,
+                    email: foundCustomer.email,
+                    firstName: foundCustomer.firstName,
+                    lastName: foundCustomer.lastName
                 }
-            })
-
-
-            
+            });
         })
         .catch((err) => {
             console.error("Error during signin:", err);
-            res.status(500).send("Internal server error");
+            return res.status(500).json({ status: false, message: "Internal server error" });
         });
 }
 
-
-
-module.exports = { postSignup, getSignup, postSignin, getSignin, getDashboard }
+module.exports = { postSignup, getSignup, postSignin, getSignin, getDashboard };
