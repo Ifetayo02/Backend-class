@@ -110,10 +110,10 @@ const postSignin = (req, res) => {
 
 
             
-            res.redirect("/user/dashboard");
+           
 
             // Success
-            return res.json({
+            return res.status(200).json({
                 message: "Login Successful",
                 user: {
                     id: foundCustomers._id,

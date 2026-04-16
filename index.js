@@ -2,6 +2,12 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+app.use(cors({
+  origin: ['http://localhost:5174','https://backend-jvdk.onrender.com/user/'], 
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true,
+optionsSuccessStatus: 204 
+}));
 const userRoute= require('./routes/user.route');
 const app = express();
 app.use(express.json());
@@ -16,12 +22,7 @@ const port = process.env.PORT;
 const MONGO_URI = process.env.MONGODB_URI;
 
 // Middleware
-app.use(cors({
-  origin: ['http://localhost:5174'], 
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  credentials: true,
-optionsSuccessStatus: 204 
-}));
+
 
 // 2. MongoDB Connection with logic check
 if (!MONGO_URI) {
