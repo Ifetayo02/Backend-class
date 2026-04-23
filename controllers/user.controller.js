@@ -1,6 +1,9 @@
 const Customer = require("../models/user.model");
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
+const jwt = require('jsonwebtoken');
+const dotenv = require('dotenv');
+dotenv.config();
 
 // These are for EJS (SSR). If you are using React, you might not need these, 
 // but I'll leave them here in case you use them for other things.
@@ -80,14 +83,19 @@ const postSignin = (req, res) => {
             }
 
             // ✅ FIX: Removed res.redirect and kept ONLY res.json
+            const token = jwt.sign({ email: req.body.email }, process.env.jwt_secret, { expiresIn: '1h' });
+            console.log('Generated token:',token);
+            
             return res.status(200).json({
                 status: true,
                 message: "Login Successful",
+            
                 user: {
                     id: foundCustomer._id,
                     email: foundCustomer.email,
                     firstName: foundCustomer.firstName,
-                    lastName: foundCustomer.lastName
+                    lastName: foundCustomer.lastName,
+                    token: token
                 }
             });
         })
